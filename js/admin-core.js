@@ -124,13 +124,13 @@ function startListeners() {
 
 // --- ACTIONS ---
 window.sendSignal = function (type) {
-    if (!currentUser) return;
+    if (!currentUser) return alert("Action Blocked: You are not logged in.");
     db.ref('control/signal').set(type)
         .catch(err => alert("Error setting signal: " + err.message));
 };
 
 window.processWithdrawal = function (id, status) {
-    if (!currentUser) return;
+    if (!currentUser) return alert("Action Blocked: You are not logged in.");
     if (!confirm(`Are you sure you want to mark this as ${status}?`)) return;
 
     db.ref('withdrawals/' + id).update({ status: status })
@@ -139,7 +139,7 @@ window.processWithdrawal = function (id, status) {
 };
 
 window.saveSettings = function () {
-    if (!currentUser) return;
+    if (!currentUser) return alert("Action Blocked: You are not logged in.");
 
     const wallets = {
         TRON: document.getElementById('walletInputTRON').value,
@@ -216,3 +216,11 @@ document.querySelectorAll('.nav-item').forEach(item => {
         }
     });
 });
+
+// --- VOLATILITY ---
+window.setVolatility = function () {
+    const val = document.getElementById('volRange').value;
+    db.ref('control/speed').set(parseFloat(val))
+        .then(() => alert("Speed updated to " + val + "x"))
+        .catch(e => alert("Error: " + e.message));
+};

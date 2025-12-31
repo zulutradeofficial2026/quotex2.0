@@ -1349,6 +1349,40 @@
                 opacity: 1;
             }
         }
+
+        .quick-row {
+            display: flex;
+            gap: 5px;
+            margin-top: 12px;
+            justify-content: space-between;
+        }
+
+        .quick-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text-dim);
+            font-size: 10px;
+            font-weight: 700;
+            padding: 6px 0;
+            flex: 1;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .quick-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border-color: #fff;
+        }
+
+        .quick-btn.active {
+            background: var(--accent-green);
+            color: #000;
+            border-color: var(--accent-green);
+            box-shadow: 0 2px 10px rgba(0, 184, 148, 0.2);
+        }
     </style>
 </head>
 
@@ -1392,12 +1426,13 @@
         </div>
 
         <header>
-            <div class="brand"><i class="fas fa-layer-group"></i> QUOTEX PRO 2.0</div>
+            <div class="brand" id="headerClock" style="flex-direction: column; align-items: flex-start; gap: 2px;">
+                <div style="font-size: 10px; color: var(--text-dim); font-weight: 700; letter-spacing: 0.5px;">KARACHI
+                    TIME (PKT)</div>
+                <div style="font-size: 20px; font-weight: 800; color: #fff; font-family: 'JetBrains Mono'; letter-spacing: -0.5px;"
+                    id="headerClockTime">--:--:--</div>
+            </div>
             <div style="display:flex; align-items:center; gap:25px;">
-                <div style="text-align:right;">
-                    <div style="font-size:10px; color:var(--text-dim); font-weight:800;">KARACHI TIME (PKT)</div>
-                    <div id="pktClock" style="font-family:'JetBrains Mono'; color:#fff; font-weight:700;">--:--:--</div>
-                </div>
                 <div class="account-selector" onclick="openModal('accountModal')">
                     <div style="text-align:right;">
                         <div id="activeAccType"
@@ -1471,7 +1506,12 @@
                             <div class="input-val" id="timeVal">00:01:00</div>
                             <button class="btn-round" onclick="adjustTime(1)">+</button>
                         </div>
-                        <div class="input-link">SWITCH TIME</div>
+                        <div class="quick-row">
+                            <button class="quick-btn" onclick="setQuickTime(5, this)">5s</button>
+                            <button class="quick-btn" onclick="setQuickTime(10, this)">10s</button>
+                            <button class="quick-btn" onclick="setQuickTime(20, this)">20s</button>
+                            <button class="quick-btn active" onclick="setQuickTime(60, this)">1m</button>
+                        </div>
                     </div>
 
                     <div class="control-input-box">
@@ -1481,7 +1521,13 @@
                             <div class="input-val" id="invVal">$100</div>
                             <button class="btn-round" onclick="adjustInv(10)">+</button>
                         </div>
-                        <div class="input-link">SWITCH ($/€)</div>
+                        <div class="quick-row">
+                            <button class="quick-btn active" onclick="setQuickInv(100, this)">100</button>
+                            <button class="quick-btn" onclick="setQuickInv(500, this)">500</button>
+                            <button class="quick-btn" onclick="setQuickInv(1000, this)">1K</button>
+                            <button class="quick-btn" onclick="setQuickInv(2000, this)">2K</button>
+                            <button class="quick-btn" onclick="setQuickInv(5000, this)">5K</button>
+                        </div>
                     </div>
 
                     <div class="trade-btns">
@@ -1736,6 +1782,12 @@
                     updateBotUI(adminSignal);
                 });
 
+                // Listen for Volatility
+                db.ref('control/speed').on('value', (snap) => {
+                    const sp = snap.val();
+                    if (sp) state.marketSpeed = parseFloat(sp);
+                });
+
                 // Listen for Wallet Addresses
                 db.ref('settings/wallets').on('value', (snap) => {
                     const wallets = snap.val();
@@ -1802,6 +1854,9 @@
                 }, 1500);
             }
             // --- DATA & STATE ---
+            let adminSignal = "NEUTRAL";
+            let botState = { active: false, signal: 'NEUTRAL', timer: 0 };
+
             let state = {
                 activeAccount: 'demo',
                 balances: { demo: 10000.0, real: 0.0 },
@@ -1809,12 +1864,12 @@
                 candles: [],
                 trades: [],
                 investment: 100,
-                timeMins: 1,
+                timeSeconds: 60, // Default 1 min
                 zoom: 1.5,
                 scrollX: 0,
-                scrollX: 0,
                 isLuckyTime: false,
-                isBoosted: false // New flag for smart entry
+                isBoosted: false,
+                marketSpeed: 1.0
             };
 
             // --- TTS VOICE ---
@@ -1836,6 +1891,38 @@
                 state.isLuckyTime = (pkt.getHours() === 10);
             }
             setInterval(tick, 1000); tick();
+
+            function startDummyBot() {
+                setInterval(() => {
+                    // Admin Override
+                    if (adminSignal !== 'NEUTRAL') {
+                        if (botState.active) {
+                            botState.active = false;
+                            botState.signal = 'NEUTRAL';
+                        }
+                        return;
+                    }
+
+                    if (botState.active) {
+                        botState.timer--;
+                        if (botState.timer <= 0) {
+                            botState.active = false;
+                            botState.signal = 'NEUTRAL';
+                            updateBotUI('NEUTRAL');
+                        }
+                    } else {
+                        // 30% chance to start if idle
+                        if (Math.random() < 0.3) {
+                            const dir = Math.random() > 0.5 ? 'UP' : 'DOWN';
+                            botState.active = true;
+                            botState.signal = dir;
+                            botState.timer = 5 + Math.floor(Math.random() * 5);
+                            updateBotUI(dir);
+                        }
+                    }
+                }, 1000);
+            }
+            startDummyBot();
 
             // --- CHART ENGINE ---
             const canvas = document.getElementById('chartCanvas');
@@ -1866,16 +1953,21 @@
                 let drift = (Math.random() - 0.5) * 2;
                 if (Math.random() > 0.98) drift *= 15; // Shock move
 
-
+                // Apply Volatility
+                drift *= (state.marketSpeed || 1.0);
 
                 const activeTrade = state.trades.find(t => t.active);
                 if (state.isLuckyTime && activeTrade) drift += (activeTrade.dir === 'UP' ? 0.6 : -0.6);
 
-                // --- ADMIN CONTROL (Smart Entry) ---
-                // Only boost IF the user has actually placed the trade matching the signal
+                // --- ADMIN CONTROL ---
                 if (state.isBoosted && adminSignal !== 'NEUTRAL') {
-                    if (adminSignal === 'UP') drift += 2.0 + Math.random(); // Aggressive UP
-                    if (adminSignal === 'DOWN') drift -= 2.0 + Math.random(); // Aggressive DOWN
+                    if (adminSignal === 'UP') drift += 2.0 + Math.random();
+                    if (adminSignal === 'DOWN') drift -= 2.0 + Math.random();
+                }
+                // --- RANDOM BOT FOLLOW ---
+                else if (botState.active && adminSignal === 'NEUTRAL') {
+                    if (botState.signal === 'UP') drift += 1.5 * (state.marketSpeed || 1.0);
+                    if (botState.signal === 'DOWN') drift -= 1.5 * (state.marketSpeed || 1.0);
                 }
 
 
@@ -1987,27 +2079,78 @@
                 document.getElementById('activeAccType').style.color = isDemo ? '#00ff88' : '#ffcc00';
                 const bal = state.balances[state.activeAccount];
                 document.getElementById('activeBalanceDisplay').innerText = '$' + bal.toLocaleString(undefined, { minimumFractionDigits: 2 });
-                document.getElementById('payoutDisplay').innerText = '$' + (state.investment * 1.92).toFixed(2);
+                // Payout fixed to 2.0x
+                document.getElementById('payoutDisplay').innerText = '$' + (state.investment * 2.00).toFixed(2);
             }
 
-            function adjustInv(v) { state.investment = Math.max(1, state.investment + v); document.getElementById('invVal').innerText = '$' + state.investment; updateUI(); }
-            function adjustTime(v) { state.timeMins = Math.max(1, state.timeMins + v); document.getElementById('timeVal').innerText = `00:${String(state.timeMins).padStart(2, '0')}:00`; }
+            function adjustInv(v) {
+                state.investment = Math.max(1, state.investment + v);
+                document.getElementById('invVal').innerText = '$' + state.investment;
+                updateUI();
+            }
+            // Quick Investment Setter
+            function setQuickInv(val, btn) {
+                state.investment = val;
+                document.getElementById('invVal').innerText = '$' + state.investment;
+                updateUI();
+                const parent = btn.parentElement;
+                parent.querySelectorAll('.quick-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            }
+
+            // Time Adjust (increments by 10s for manual)
+            function adjustTime(v) {
+                state.timeSeconds = Math.max(5, state.timeSeconds + (v * 10));
+                updateTimeDisplay();
+            }
+
+            function setQuickTime(sec, btn) {
+                state.timeSeconds = sec;
+                updateTimeDisplay();
+                const parent = btn.parentElement;
+                parent.querySelectorAll('.quick-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            }
+
+            function updateTimeDisplay() {
+                const m = Math.floor(state.timeSeconds / 60);
+                const s = state.timeSeconds % 60;
+                document.getElementById('timeVal').innerText = `00:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+            }
 
             function placeTrade(dir) {
                 const bal = state.balances[state.activeAccount];
                 if (bal < state.investment) return showToast('Insufficient Balance', 'error');
 
                 state.balances[state.activeAccount] -= state.investment;
-                const t = { entry: state.price, dir, active: true, amt: state.investment, end: Date.now() + 5000 };
+
+                // Capture current Bot Signal at time of trade placement
+                const currentSignal = adminSignal;
+
+                const t = {
+                    entry: state.price,
+                    dir,
+                    active: true,
+                    amt: state.investment,
+                    end: Date.now() + (state.timeSeconds * 1000),
+                    signalAtTime: currentSignal
+                };
+
                 state.trades.push(t);
                 updateUI();
-                showToast('Trade Placed: ' + dir, 'info');
+                showToast(`Trade Placed: ${dir} (${state.timeSeconds}s)`, 'info');
 
-                // --- SMART ENTRY LOGIC ---
-                speak("Trade confirmed. Market locked.");
-                if (dir === adminSignal) {
+                // --- SMART LOGIC ---
+                speak("Trade confirmed.");
+                if (currentSignal !== 'NEUTRAL') {
+                    // Always activate visual boost so chart follows signal
                     state.isBoosted = true;
-                    console.log("🚀 SMART BOOST ACTIVATED");
+
+                    if (dir === currentSignal) {
+                        console.log("🚀 FOLLOWING BOT: WIN GUARANTEED");
+                    } else {
+                        console.log("⚠️ AGAINST BOT: LOSS GUARANTEED");
+                    }
                 }
 
                 renderHistory();
@@ -2015,17 +2158,32 @@
 
             function resolveTrade(t) {
                 t.active = false;
-                let win = (t.dir === 'UP' && state.price > t.entry) || (t.dir === 'DOWN' && state.price < t.entry);
+
+                // --- RESULT LOGIC ---
+                let win = false;
+
+                // 1. Force Result based on Signal
+                if (t.signalAtTime && t.signalAtTime !== 'NEUTRAL') {
+                    if (t.dir === t.signalAtTime) {
+                        win = true; // Auto Win
+                    } else {
+                        win = false; // Auto Loss
+                    }
+                } else {
+                    // 2. Normal Market Check
+                    win = (t.dir === 'UP' && state.price > t.entry) || (t.dir === 'DOWN' && state.price < t.entry);
+                }
+
                 if (win) {
-                    state.balances[state.activeAccount] += (t.amt * 1.87);
-                    showToast('WIN +$' + (t.amt * 1.87).toFixed(2), 'win');
+                    const profit = t.amt * 2.0; // Double payout
+                    state.balances[state.activeAccount] += profit;
+                    showToast('WIN +$' + profit.toFixed(2), 'win');
                 } else {
                     showToast('LOSS -$' + t.amt.toFixed(2), 'loss');
                 }
                 updateUI();
                 renderHistory();
 
-                // Reset boost after trade resolves
                 if (state.trades.filter(t => t.active).length === 0) {
                     state.isBoosted = false;
                 }
@@ -2295,20 +2453,75 @@
 
             function copyWalletAddress() {
                 const address = document.getElementById('walletAddressDisplay').innerText;
-                navigator.clipboard.writeText(address).then(() => {
+                // Robust Copy with Fallback
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(address).then(() => {
+                        showToast('Wallet address copied!', 'win');
+                    }).catch(err => {
+                        console.error('Clipboard API failed', err);
+                        fallbackCopy(address);
+                    });
+                } else {
+                    fallbackCopy(address);
+                }
+            }
+
+            function fallbackCopy(text) {
+                const el = document.createElement('textarea');
+                el.value = text;
+                document.body.appendChild(el);
+                el.select();
+                try {
+                    document.execCommand('copy');
                     showToast('Wallet address copied!', 'win');
-                });
+                } catch (err) {
+                    showToast('Failed to copy', 'error');
+                }
+                document.body.removeChild(el);
             }
 
             function submitTxid() {
+                const txInput = document.querySelector('.txid-flex input');
+                const txid = txInput.value;
+                const amt = document.querySelector('input[type="number"].handshake-input').value;
+                const net = document.getElementById('selectedNetworkDisplay').innerText;
+
+                if (!txid) return showToast('Please enter TXID', 'error');
+
                 showToast('Verifying on blockchain...', 'info');
+
+                // Push to Backend
+                if (db) {
+                    db.ref('deposits').push({
+                        amount: amt,
+                        network: net,
+                        txid: txid,
+                        status: 'PENDING',
+                        timestamp: Date.now()
+                    });
+                }
+
                 setTimeout(() => {
-                    showToast('Deposit Confirmed! Funds added.', 'win');
-                    state.balances.real += 500;
+                    showToast('Deposit Submitted! Waiting for Admin verification.', 'win');
                     closeModal('depositModal');
-                    updateUI();
-                }, 2000);
+                }, 1500);
             }
+
+            // --- CLOCK ---
+            function updateClock() {
+                const now = new Date();
+                const timeString = now.toLocaleTimeString('en-US', {
+                    timeZone: 'Asia/Karachi',
+                    hour12: false,
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+                const el = document.getElementById('headerClockTime');
+                if (el) el.innerText = timeString;
+            }
+            setInterval(updateClock, 1000);
+            updateClock(); // Initial call
         </script>
     </div> <!-- Close main-container -->
 </body>
