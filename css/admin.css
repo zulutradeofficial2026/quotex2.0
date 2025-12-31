@@ -1,0 +1,253 @@
+:root {
+    --bg-dark: #050505;
+    --bg-panel: #111;
+    --bg-input: #222;
+    --accent-green: #00ff88;
+    --accent-red: #ff0055;
+    --text-main: #ffffff;
+    --text-dim: #666;
+    --border: #333;
+}
+
+body {
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    font-family: 'Inter', sans-serif;
+    margin: 0;
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* --- LOGIN OVERLAY --- */
+#loginOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #000;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+
+.login-box {
+    background: #111;
+    padding: 40px;
+    border: 1px solid #333;
+    border-radius: 12px;
+    text-align: center;
+    width: 320px;
+}
+
+/* --- FORMS --- */
+input {
+    background: var(--bg-input);
+    border: 1px solid #444;
+    color: #fff;
+    padding: 12px;
+    border-radius: 6px;
+    width: 100%;
+    margin-bottom: 12px;
+    box-sizing: border-box;
+    font-family: 'Inter', sans-serif;
+}
+input:focus {
+    outline: none;
+    border-color: var(--accent-green);
+}
+
+button {
+    background: var(--accent-green);
+    color: #000;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 6px;
+    font-weight: 800;
+    cursor: pointer;
+    width: 100%;
+    text-transform: uppercase;
+    transition: all 0.2s;
+}
+button:hover {
+    filter: brightness(1.1);
+}
+
+/* --- LAYOUT --- */
+.sidebar {
+    width: 260px;
+    background: var(--bg-panel);
+    border-right: 1px solid var(--border);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.nav-item {
+    padding: 12px;
+    background: transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    color: #888;
+    transition: 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.nav-item:hover,
+.nav-item.active {
+    background: #1a1a1a;
+    color: #fff;
+}
+.nav-item.active {
+    border-left: 3px solid var(--accent-green);
+}
+
+.content {
+    flex: 1;
+    padding: 40px;
+    overflow-y: auto;
+}
+
+.content-section {
+    display: none; /* Hidden by default, toggled by JS */
+}
+
+/* --- TYPOGRAPHY --- */
+h1 {
+    font-size: 24px;
+    font-weight: 800;
+    margin: 0;
+    color: #fff;
+}
+
+h2 {
+    font-size: 14px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    margin-top: 30px;
+    border-bottom: 1px solid #333;
+    padding-bottom: 10px;
+}
+
+.header-row {
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    margin-bottom: 30px;
+}
+
+/* --- CARDS --- */
+.card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px;
+}
+
+.card {
+    background: #111;
+    border: 1px solid #222;
+    padding: 24px;
+    border-radius: 12px;
+}
+.card-title {
+    color: #888;
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 15px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* --- BADGES --- */
+.status-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+.status-badge.online {
+    background: rgba(0, 255, 136, 0.15);
+    color: var(--accent-green);
+}
+.status-badge.pending {
+    background: rgba(255, 165, 0, 0.15);
+    color: orange;
+}
+
+/* --- CONTROLS --- */
+.control-btn {
+    padding: 24px;
+    font-size: 16px;
+    text-transform: uppercase;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    border-radius: 8px;
+    background: #1a1a1a;
+    color: #666; 
+    border: 2px solid transparent;
+}
+
+.control-up { color: var(--accent-green); background: rgba(0, 255, 136, 0.05); }
+.control-down { color: var(--accent-red); background: rgba(255, 0, 85, 0.05); }
+
+/* Active State for Signals (Visual Feedback) */
+.active-signal.control-up {
+    background: rgba(0, 255, 136, 0.2);
+    border-color: var(--accent-green);
+    color: var(--accent-green);
+    box-shadow: 0 0 15px rgba(0, 255, 136, 0.2);
+}
+.active-signal.control-down {
+    background: rgba(255, 0, 85, 0.2);
+    border-color: var(--accent-red);
+    color: var(--accent-red);
+    box-shadow: 0 0 15px rgba(255, 0, 85, 0.2);
+}
+
+/* --- TABLES --- */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    font-size: 13px;
+}
+th {
+    text-align: left;
+    color: #666;
+    font-weight: 600;
+    padding: 12px 10px;
+    border-bottom: 1px solid #222;
+}
+td {
+    padding: 12px 10px;
+    border-bottom: 1px solid #222;
+    color: #ccc;
+    vertical-align: middle;
+}
+.mono-font { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #fff; }
+.amount-text { color: var(--accent-green); font-weight: bold; }
+
+.action-btn {
+    padding: 6px 12px;
+    font-size: 11px;
+    width: auto;
+    margin-right: 5px;
+    border-radius: 4px;
+    text-transform: uppercase;
+}
+.btn-approve { background: var(--accent-green); color: #000; }
+.btn-reject { background: #333; color: #fff; }
+.btn-reject:hover { background: #444; }
