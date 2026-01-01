@@ -456,6 +456,120 @@
             opacity: 0.3;
         }
 
+        /* TICKER */
+        .ticker-wrap {
+            width: 100%;
+            overflow: hidden;
+            background: rgba(0, 0, 0, 0.3);
+            border-bottom: 1px solid var(--border);
+            height: 30px;
+            display: flex;
+            align-items: center;
+        }
+
+        .ticker {
+            display: flex;
+            animation: ticker 20s linear infinite;
+            white-space: nowrap;
+        }
+
+        .ticker-item {
+            margin-right: 40px;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-dim);
+            display: flex;
+            gap: 5px;
+        }
+
+        .ticker-item span {
+            color: #fff;
+        }
+
+        .ticker-item.up span {
+            color: var(--accent-green);
+        }
+
+        .ticker-item.down span {
+            color: var(--accent-red);
+        }
+
+        @keyframes ticker {
+            0% {
+                transform: translateX(100%);
+            }
+
+            100% {
+                transform: translateX(-100%);
+            }
+        }
+
+
+        /* --- RESULT OVERLAY --- */
+        .result-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            z-index: 99999;
+            display: none;
+            /* Flex when active */
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            /* Allow clicking through logic if needed, but better to block interaction during celebration */
+        }
+
+        .result-card {
+            background: rgba(20, 25, 35, 0.95);
+            border: 2px solid;
+            padding: 40px 60px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
+            transform: scale(0.8);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            min-width: 300px;
+        }
+
+        .result-card.active {
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        .result-title {
+            font-size: 14px;
+            letter-spacing: 2px;
+            font-weight: 800;
+            margin-bottom: 20px;
+            color: #fff;
+            opacity: 0.7;
+            text-transform: uppercase;
+        }
+
+        .result-amount {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 48px;
+            font-weight: 800;
+            margin: 10px 0;
+            text-shadow: 0 0 30px currentColor;
+        }
+
+        .result-badge {
+            display: inline-block;
+            padding: 8px 24px;
+            border-radius: 30px;
+            font-weight: 800;
+            font-size: 16px;
+            margin-top: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
         /* --- MODALS --- */
         .modal-overlay {
             position: fixed;
@@ -1446,6 +1560,23 @@
             </div>
         </header>
 
+        <div class="ticker-wrap">
+            <div class="ticker">
+                <div class="ticker-item">BTC <span class="up">+5.2%</span></div>
+                <div class="ticker-item">ETH <span class="up">+2.1%</span></div>
+                <div class="ticker-item">SOL <span class="up">+10.4%</span></div>
+                <div class="ticker-item">XRP <span class="down">-1.2%</span></div>
+                <div class="ticker-item">ADA <span class="down">-0.5%</span></div>
+                <div class="ticker-item">DOGE <span class="up">+8.3%</span></div>
+                <div class="ticker-item">DOT <span class="down">-2.1%</span></div>
+                <div class="ticker-item">AVAX <span class="up">+4.7%</span></div>
+                <div class="ticker-item">LINK <span class="up">+1.2%</span></div>
+                <div class="ticker-item">UNI <span class="down">-0.8%</span></div>
+                <div class="ticker-item">EUR/USD <span class="up">+0.05%</span></div>
+                <div class="ticker-item">GBP/USD <span class="down">-0.02%</span></div>
+            </div>
+        </div>
+
 
         <div class="main-stage">
 
@@ -1559,6 +1690,15 @@
             </aside>
         </div>
 
+        <!-- RESULT OVERLAY -->
+        <div class="result-overlay" id="resultOverlay">
+            <div class="result-card" id="resultCard">
+                <div class="result-title">TRADE FINISHED</div>
+                <div class="result-amount" id="resultAmount">+$0.00</div>
+                <div class="result-badge" id="resultBadge">WIN</div>
+            </div>
+        </div>
+
         <!-- MODALS -->
         <div class="modal-overlay" id="accountModal">
             <div class="modal">
@@ -1654,8 +1794,10 @@
         <!-- WELCOME MODAL (Account Selection) -->
         <div class="welcome-modal-overlay" id="welcomeModal" onclick="if(event.target === this) closeWelcomeModal()">
             <div class="welcome-modal">
-                <i class="fas fa-times welcome-close" onclick="closeWelcomeModal()"></i>
-                <div class="welcome-title">What account do you want to continue trading on?</div>
+                <i class="fas fa-times welcome-close" style="z-index:100; color:#ff4d4d; font-size:20px;"
+                    onclick="this.parentElement.parentElement.style.display='none';"></i>
+                <div class="welcome-title">What account do you want to continue trading on? <span
+                        style="font-size:10px; opacity:0.5;">(v2.1)</span></div>
 
                 <!-- Demo Account Option -->
                 <div class="account-choice" onclick="selectWelcomeAccount('demo')">
@@ -1767,10 +1909,27 @@
             style="position:fixed; top:20px; right:20px; z-index:10001; display:flex; flex-direction:column; gap:10px;">
         </div>
         <script src="js/firebase-config.js"></script>
+        <script src="js/chart-engine.js"></script>
         <script>
+            // Production Build
             // --- FIREBASE INIT ---
             let db;
             let adminSignal = "NEUTRAL";
+
+            // --- GLOBAL WALLET DEFS (Moved to top for hoisting safety) ---
+            const walletAddresses = {
+                'TRON': 'TWGTCaBffhTMoQH8GYrA92gNSQVeWAHvB4',
+                'ETH': '0x71C7656EC7ab88b098defB751B7401B5f6d8976F',
+                'BSC': '0x71C7656EC7ab88b098defB751B7401B5f6d8976F',
+                'BTC': 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh'
+            };
+
+            const networkNames = {
+                'TRON': 'TRON (TRC20)',
+                'ETH': 'ETHEREUM (ERC20)',
+                'BSC': 'BINANCE SMART',
+                'BTC': 'BITCOIN NETWORK'
+            };
 
             try {
                 // Use shared init logic
@@ -1851,13 +2010,47 @@
                     });
                 }
 
+                closeModal('withdrawalModal'); // Hide modal first
+                showWithdrawalSuccess(); // Show Success Message
+            }
+
+            function showWithdrawalSuccess() {
+                const overlay = document.getElementById('resultOverlay');
+                const card = document.getElementById('resultCard');
+                const amtEl = document.getElementById('resultAmount');
+                const badgeEl = document.getElementById('resultBadge');
+                const titleEl = document.querySelector('.result-title');
+
+                // Custom Styling for Withdrawal
+                overlay.style.display = 'flex';
+                setTimeout(() => card.classList.add('active'), 10);
+
+                card.style.borderColor = '#00ff88';
+                card.style.boxShadow = '0 0 80px rgba(0, 255, 136, 0.5)'; // Extra Sparkle
+
+                titleEl.textContent = 'WITHDRAWAL APPLIED';
+                amtEl.style.color = '#00ff88';
+                amtEl.style.fontSize = '24px'; // Smaller text for message
+                amtEl.style.lineHeight = '1.4';
+                amtEl.innerHTML = `Successfully withdrawal applied.<br><span style="font-size:16px; color:#fff;">You will get your refund in next 30 minutes.</span>`;
+
+                badgeEl.innerHTML = '<i class="fas fa-check-circle"></i> SUCCESS';
+                badgeEl.style.background = 'rgba(0, 255, 136, 0.2)';
+                badgeEl.style.color = '#00ff88';
+
+                speak("Withdrawal successful.");
+
+                // Auto hide longer for reading
                 setTimeout(() => {
-                    showToast('Request Sent to Admin for Approval', 'win');
-                    closeModal('withdrawalModal');
-                }, 1500);
+                    card.classList.remove('active');
+                    setTimeout(() => {
+                        overlay.style.display = 'none';
+                        // Reset Title for Trade Results
+                        setTimeout(() => { titleEl.textContent = 'TRADE FINISHED'; amtEl.style.fontSize = '48px'; }, 500);
+                    }, 300);
+                }, 6000);
             }
             // --- DATA & STATE ---
-            let adminSignal = "NEUTRAL";
             let botState = { active: false, signal: 'NEUTRAL', timer: 0 };
 
             let state = {
@@ -1872,7 +2065,8 @@
                 scrollX: 0,
                 isLuckyTime: false,
                 isBoosted: false,
-                marketSpeed: 1.0
+                marketSpeed: 1.0,
+                momentum: 0 // Physics momentum for smooth price movement
             };
 
             // --- TTS VOICE ---
@@ -1890,7 +2084,8 @@
                 const now = new Date();
                 const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
                 const pkt = new Date(utc + (3600000 * 5));
-                document.getElementById('pktClock').innerText = pkt.toLocaleTimeString('en-GB');
+                const el = document.getElementById('headerClockTime');
+                if (el) el.innerText = pkt.toLocaleTimeString('en-GB');
                 state.isLuckyTime = (pkt.getHours() === 10);
             }
             setInterval(tick, 1000); tick();
@@ -1928,145 +2123,8 @@
             startDummyBot();
 
             // --- CHART ENGINE ---
-            const canvas = document.getElementById('chartCanvas');
-            const ctx = canvas.getContext('2d');
-            const priceLine = document.getElementById('priceLineDisplay');
-
-            function resize() {
-                canvas.width = canvas.parentElement.clientWidth;
-                canvas.height = canvas.parentElement.clientHeight;
-            }
-            window.onresize = resize; resize();
-
-            // Prefill Candles
-            let lastP = state.price;
-            for (let i = 0; i < 300; i++) {
-                let o = lastP;
-                let move = (Math.random() - 0.5) * 100;
-                let c = o + move;
-                let h = Math.max(o, c) + Math.random() * 20;
-                let l = Math.min(o, c) - Math.random() * 20;
-                state.candles.push({ o, h, l, c });
-                lastP = c;
-            }
-
-            let currC = { o: lastP, h: lastP, l: lastP, c: lastP, start: Date.now() };
-
-            function update() {
-                let drift = (Math.random() - 0.5) * 2;
-                if (Math.random() > 0.98) drift *= 15; // Shock move
-
-                // Apply Volatility
-                drift *= (state.marketSpeed || 1.0);
-
-                const activeTrade = state.trades.find(t => t.active);
-                if (state.isLuckyTime && activeTrade) drift += (activeTrade.dir === 'UP' ? 0.6 : -0.6);
-
-                // --- ADMIN CONTROL ---
-                if (state.isBoosted && adminSignal !== 'NEUTRAL') {
-                    if (adminSignal === 'UP') drift += 2.0 + Math.random();
-                    if (adminSignal === 'DOWN') drift -= 2.0 + Math.random();
-                }
-                // --- RANDOM BOT FOLLOW ---
-                else if (botState.active && adminSignal === 'NEUTRAL') {
-                    if (botState.signal === 'UP') drift += 1.5 * (state.marketSpeed || 1.0);
-                    if (botState.signal === 'DOWN') drift -= 1.5 * (state.marketSpeed || 1.0);
-                }
-
-
-                state.price += drift;
-                currC.c = state.price;
-                if (state.price > currC.h) currC.h = state.price;
-                if (state.price < currC.l) currC.l = state.price;
-
-                if (Date.now() - currC.start > 8000) { // 8 sec candles
-                    state.candles.push({ ...currC });
-                    if (state.candles.length > 400) state.candles.shift();
-                    currC = { o: state.price, h: state.price, l: state.price, c: state.price, start: Date.now() };
-                }
-
-                state.trades.forEach(t => { if (t.active && Date.now() > t.end) resolveTrade(t); });
-            }
-
-            function draw() {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-                const vC = Math.floor(60 / state.zoom);
-                const list = state.candles.slice(-vC);
-                const min = Math.min(...list.map(x => x.l), currC.l) - 5;
-                const max = Math.max(...list.map(x => x.h), currC.h) + 5;
-                const range = max - min;
-                const pxP = canvas.height / range;
-
-                const getY = (v) => canvas.height - (v - min) * pxP;
-                const cW = canvas.width / vC;
-
-                // --- GRID & LABELS ---
-                ctx.lineWidth = 1;
-                ctx.font = "11px Inter";
-
-                // Horizontal (Price) Grid
-                const gridSteps = 8;
-                const priceStep = range / gridSteps;
-                for (let i = 0; i <= gridSteps; i++) {
-                    const tv = min + (i * priceStep);
-                    const y = getY(tv);
-
-                    // Line
-                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-                    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
-
-                    // Label (Right Axis)
-                    ctx.fillStyle = '#666';
-                    ctx.fillText(tv.toFixed(2), canvas.width - 60, y - 5);
-                }
-
-                // Vertical (Time) Grid
-                const timeSteps = 10;
-                const timeStepW = canvas.width / timeSteps;
-                for (let i = 0; i <= timeSteps; i++) {
-                    const x = i * timeStepW;
-
-                    // Line
-                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-                    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
-
-                    // Time Label (Just mock times for visual feel)
-                    const m = new Date();
-                    m.setMinutes(m.getMinutes() - (timeSteps - i));
-                    const ts = m.getHours() + ':' + String(m.getMinutes()).padStart(2, '0');
-
-                    ctx.fillStyle = '#444';
-                    ctx.fillText(ts, x + 5, canvas.height - 10);
-                }
-
-                // Candidates
-                [...list, currC].forEach((c, i) => {
-                    let x = i * cW;
-                    let isG = c.c >= c.o;
-                    ctx.fillStyle = ctx.strokeStyle = (isG ? '#00b894' : '#ff6b6b');
-                    ctx.lineWidth = 1.5;
-                    // Wick
-                    ctx.beginPath(); ctx.moveTo(x + cW / 2, getY(c.h)); ctx.lineTo(x + cW / 2, getY(c.l)); ctx.stroke();
-                    // Body
-                    const bodyWidth = Math.max(cW - 6, cW * 0.7);
-                    const bodyX = x + (cW - bodyWidth) / 2;
-                    ctx.fillRect(bodyX, getY(Math.max(c.o, c.c)), bodyWidth, Math.max(1, Math.abs(getY(c.o) - getY(c.c))));
-                });
-
-                // Current Price Line
-                let py = getY(state.price);
-                priceLine.style.top = (py - 12) + 'px';
-                priceLine.innerText = state.price.toFixed(2);
-                priceLine.style.background = state.price >= currC.o ? '#00b894' : '#ff6b6b';
-
-                // Pulsing dot on price line
-                ctx.fillStyle = state.price >= currC.o ? '#00b894' : '#ff6b6b';
-                ctx.beginPath(); ctx.arc(canvas.width, py, 3, 0, Math.PI * 2); ctx.fill();
-            }
-
-            function loop() { update(); draw(); requestAnimationFrame(loop); }
-            loop();
+            // Initialize the Robust Chart Engine
+            window.chartEngine = new ChartEngine('chartCanvas');
 
             // --- ACCOUNT LOGIC ---
             function selectAccount(type) {
@@ -2131,7 +2189,7 @@
                 const currentSignal = adminSignal;
 
                 const t = {
-                    entry: state.price,
+                    entry: window.chartEngine.price, // Use new engine price
                     dir,
                     active: true,
                     amt: state.investment,
@@ -2145,16 +2203,9 @@
 
                 // --- SMART LOGIC ---
                 speak("Trade confirmed.");
-                if (currentSignal !== 'NEUTRAL') {
-                    // Always activate visual boost so chart follows signal
-                    state.isBoosted = true;
 
-                    if (dir === currentSignal) {
-                        console.log("🚀 FOLLOWING BOT: WIN GUARANTEED");
-                    } else {
-                        console.log("⚠️ AGAINST BOT: LOSS GUARANTEED");
-                    }
-                }
+                // If there's an active trade, we might want to boost volatility marginally
+                // window.chartEngine.setVolatility(1.2); 
 
                 renderHistory();
             }
@@ -2164,6 +2215,7 @@
 
                 // --- RESULT LOGIC ---
                 let win = false;
+                const exitPrice = window.chartEngine.price;
 
                 // 1. Force Result based on Signal
                 if (t.signalAtTime && t.signalAtTime !== 'NEUTRAL') {
@@ -2174,22 +2226,22 @@
                     }
                 } else {
                     // 2. Normal Market Check
-                    win = (t.dir === 'UP' && state.price > t.entry) || (t.dir === 'DOWN' && state.price < t.entry);
+                    win = (t.dir === 'UP' && exitPrice > t.entry) || (t.dir === 'DOWN' && exitPrice < t.entry);
                 }
 
                 if (win) {
                     const profit = t.amt * 2.0; // Double payout
                     state.balances[state.activeAccount] += profit;
-                    showToast('WIN +$' + profit.toFixed(2), 'win');
+                    // showToast('WIN +$' + profit.toFixed(2), 'win'); <-- Replaced with Overlay
+                    // Payout is 2.0x, so Profit = 1.0x Investment.
+                    showResultOverlay(true, profit - t.amt);
                 } else {
-                    showToast('LOSS -$' + t.amt.toFixed(2), 'loss');
+                } else {
+                    // showToast('LOSS -$' + t.amt.toFixed(2), 'loss'); <-- Replaced with Overlay
+                    showResultOverlay(false, t.amt);
                 }
                 updateUI();
                 renderHistory();
-
-                if (state.trades.filter(t => t.active).length === 0) {
-                    state.isBoosted = false;
-                }
             }
 
             function renderHistory() {
@@ -2203,7 +2255,11 @@
                     row.style.borderBottom = '1px solid var(--border)';
                     row.style.display = 'flex';
                     row.style.justifyContent = 'space-between';
-                    const isWin = !t.active && ((t.dir === 'UP' && state.price > t.entry) || (t.dir === 'DOWN' && state.price < t.entry));
+
+                    // We need real-time update here if we want to show 'Running' status accurately,
+                    // but for this simple list static is ok until trade closes.
+                    const isWin = !t.active && ((t.dir === 'UP' && window.chartEngine.price > t.entry) || (t.dir === 'DOWN' && window.chartEngine.price < t.entry));
+
                     row.innerHTML = `
                     <div style="font-size:12px;">
                         <div style="font-weight:800; color:${t.dir === 'UP' ? '#00ff88' : '#ff4d4d'};">${t.dir}</div>
@@ -2217,12 +2273,22 @@
                 });
             }
 
+            // Global Tick for trade resolution
+            setInterval(() => {
+                state.trades.forEach(t => {
+                    if (t.active && Date.now() > t.end) resolveTrade(t);
+                });
+            }, 250); // Check 4 times a second
+
             // --- BOT ---
             function updateBotUI(sig) {
                 const el = document.getElementById('aiSignalText');
                 const icon = document.getElementById('aiIcon');
                 const bar = document.getElementById('aiBar');
                 const conf = document.getElementById('aiConf');
+
+                // Pass signal to Chart Engine for Physics Control
+                if (window.chartEngine) window.chartEngine.setBotSignal(sig);
 
                 if (sig === 'NEUTRAL') {
                     el.innerText = 'SCANNING';
@@ -2259,6 +2325,46 @@
                     // el.style.opacity = Math.random() > 0.5 ? 1 : 0.7;
                 }
             }, 1000);
+
+            // --- RESULT OVERLAY LOGIC ---
+            function showResultOverlay(win, amount) {
+                const overlay = document.getElementById('resultOverlay');
+                const card = document.getElementById('resultCard');
+                const amtEl = document.getElementById('resultAmount');
+                const badgeEl = document.getElementById('resultBadge');
+
+                overlay.style.display = 'flex';
+                // Small delay to allow display:flex to apply before adding class for animation
+                setTimeout(() => card.classList.add('active'), 10);
+
+                if (win) {
+                    card.style.borderColor = '#00ff88';
+                    card.style.boxShadow = '0 0 60px rgba(0, 255, 136, 0.3)';
+                    amtEl.style.color = '#00ff88';
+                    amtEl.innerText = '+$' + amount.toFixed(2);
+                    badgeEl.innerText = 'PROFIT';
+                    badgeEl.style.background = 'rgba(0, 255, 136, 0.2)';
+                    badgeEl.style.color = '#00ff88';
+                    speak("Trade won.");
+                } else {
+                    card.style.borderColor = '#ff4d4d';
+                    card.style.boxShadow = '0 0 60px rgba(255, 77, 77, 0.3)';
+                    amtEl.style.color = '#ff4d4d';
+                    amtEl.innerText = '-$' + amount.toFixed(2);
+                    badgeEl.innerText = 'LOSS';
+                    badgeEl.style.background = 'rgba(255, 77, 77, 0.2)';
+                    badgeEl.style.color = '#ff4d4d';
+                    speak("Trade lost.");
+                }
+
+                // Auto hide
+                setTimeout(() => {
+                    card.classList.remove('active');
+                    setTimeout(() => {
+                        overlay.style.display = 'none';
+                    }, 300); // Wait for transition
+                }, 3000);
+            }
 
             // --- UTILS ---
             function openModal(id) { document.getElementById(id).style.display = 'flex'; }
@@ -2310,7 +2416,12 @@
                             updateUI();
                         }, 1000);
                     } else {
-                        showToast('Click "Top up" button to activate Real account', 'info');
+                        // Direct Redirect to Deposit
+                        console.log("Redirecting to Deposit...");
+                        closeWelcomeModal();
+                        state.activeAccount = 'real'; // Switch to real
+                        openModal('depositModal');
+                        updateUI();
                     }
                 }
             }
@@ -2414,20 +2525,7 @@
                 showToast(`Switched to ${name}`, 'info');
             }
 
-            // --- SECURE WALLET HANDSHAKE LOGIC ---
-            const walletAddresses = {
-                'TRON': 'TWGTCaBffhTMoQH8GYrA92gNSQVeWAHvB4',
-                'ETH': '0x71C7656EC7ab88b098defB751B7401B5f6d8976F',
-                'BSC': '0x71C7656EC7ab88b098defB751B7401B5f6d8976F',
-                'BTC': 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh'
-            };
 
-            const networkNames = {
-                'TRON': 'TRON (TRC20)',
-                'ETH': 'ETHEREUM (ERC20)',
-                'BSC': 'BINANCE SMART',
-                'BTC': 'BITCOIN NETWORK'
-            };
 
             function switchNetwork(network) {
                 // Update active tab styles
