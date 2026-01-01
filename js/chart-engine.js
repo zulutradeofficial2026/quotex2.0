@@ -33,9 +33,17 @@ class ChartEngine {
     // ---------------- CORE LIFECYCLE ----------------
 
     init() {
-        console.log("ChartEngine v4: Init");
+        console.log("ChartEngine v4: Init starting...");
+        if (!this.canvas) {
+            console.error("ChartEngine: Canvas NOT found!");
+            return;
+        }
         this.resize();
-        window.addEventListener('resize', () => this.resize());
+        console.log("ChartEngine: Initial resize done, dims:", this.canvas.width, this.canvas.height);
+        window.addEventListener('resize', () => {
+            this.resize();
+            console.log("ChartEngine: Window resized, new dims:", this.canvas.width, this.canvas.height);
+        });
 
         // Mouse Listeners
         this.canvas.addEventListener('mousemove', (e) => {
@@ -158,8 +166,10 @@ class ChartEngine {
     loop() {
         requestAnimationFrame(() => this.loop());
 
-        // Auto-fix zero size
-        if (this.canvas.width === 0) this.resize();
+        // Auto-fix zero or default size
+        if (this.canvas.width === 0 || (this.canvas.width === 300 && this.canvas.parentElement && this.canvas.parentElement.clientWidth !== 300)) {
+            this.resize();
+        }
 
         const now = Date.now();
         const dt = (now - this.lastFrame) / 1000;
@@ -172,7 +182,15 @@ class ChartEngine {
     // ---------------- RENDER ENGINE ----------------
 
     draw() {
-        if (!this.ctx || this.canvas.width === 0) return;
+        if (!this.ctx) {
+            if (!this.drawErrorLogged) {
+                console.error("ChartEngine: Context is NULL");
+                this.drawErrorLogged = true;
+            }
+            return;
+        }
+        if (this.canvas.width === 0) return;
+
         const w = this.canvas.width;
         const h = this.canvas.height;
         this.ctx.clearRect(0, 0, w, h);
@@ -182,7 +200,13 @@ class ChartEngine {
         const visible = this.candles.slice(-visCount);
         visible.push(this.currentCandle);
 
-        if (visible.length === 0) return;
+        if (visible.length === 0) {
+            if (!this.visibleErrorLogged) {
+                console.warn("ChartEngine: No visible candles to draw");
+                this.visibleErrorLogged = true;
+            }
+            return;
+        }
 
         // 2. Scale
         let min = Infinity, max = -Infinity;

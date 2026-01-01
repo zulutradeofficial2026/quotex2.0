@@ -2078,36 +2078,7 @@
             }
 
             // --- RESULT UI ---
-            function showResultOverlay(win, amount) {
-                const overlay = document.getElementById('resultOverlay');
-                const card = overlay.querySelector('.result-card');
-                const title = overlay.querySelector('.result-title');
-                const amtEl = overlay.querySelector('.result-amount');
-                const icon = overlay.querySelector('.result-icon');
 
-                // Reset Classes
-                card.classList.remove('win', 'loss');
-                card.classList.add(win ? 'win' : 'loss');
-
-                // Content
-                title.innerText = win ? 'TRADE PROFIT' : 'TRADE LOSS';
-                amtEl.innerText = (win ? '+' : '-') + '$' + amount.toFixed(2);
-                amtEl.style.color = win ? '#00b894' : '#ff6b6b';
-                icon.innerHTML = win ? '✅' : '⚠️';
-
-                // Sound
-                playSystemSound(win ? 'win' : 'loss');
-
-                // Show
-                overlay.style.display = 'flex';
-
-                // Auto-Hide
-                setTimeout(() => {
-                    overlay.style.display = 'none';
-                    // Reload page if needed (as per original logic), or just close
-                    if (state.balance < 10) location.reload();
-                }, 4000);
-            }
             function showWithdrawalSuccess() {
                 const overlay = document.getElementById('resultOverlay');
                 const card = document.getElementById('resultCard');
@@ -2127,9 +2098,12 @@
                 amtEl.style.lineHeight = '1.4';
                 amtEl.innerHTML = `Successfully withdrawal applied.<br><span style="font-size:16px; color:#fff;">You will get your refund in next 30 minutes.</span>`;
 
-                badgeEl.innerHTML = '<i class="fas fa-check-circle"></i> SUCCESS';
-                badgeEl.style.background = 'rgba(0, 255, 136, 0.2)';
-                badgeEl.style.color = '#00ff88';
+                const badgeEl = document.getElementById('resultBadge');
+                if (badgeEl) {
+                    badgeEl.innerHTML = '<i class="fas fa-check-circle"></i> SUCCESS';
+                    badgeEl.style.background = 'rgba(0, 255, 136, 0.2)';
+                    badgeEl.style.color = '#00ff88';
+                }
 
                 speak("Withdrawal successful.");
 
@@ -2173,15 +2147,24 @@
             }
 
             // --- CLOCK ---
-            function tick() {
+            function updateClock() {
                 const now = new Date();
+                const timeString = now.toLocaleTimeString('en-US', {
+                    timeZone: 'Asia/Karachi',
+                    hour12: false,
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+                const el = document.getElementById('headerClockTime');
+                if (el) el.innerText = timeString;
+
+                // PKT calculation for lucky time
                 const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
                 const pkt = new Date(utc + (3600000 * 5));
-                const el = document.getElementById('headerClockTime');
-                if (el) el.innerText = pkt.toLocaleTimeString('en-GB');
                 state.isLuckyTime = (pkt.getHours() === 10);
             }
-            setInterval(tick, 1000); tick();
+            setInterval(updateClock, 1000); updateClock();
 
             function startDummyBot() {
                 setInterval(() => {
@@ -2328,7 +2311,6 @@
                     // showToast('WIN +$' + profit.toFixed(2), 'win'); <-- Replaced with Overlay
                     // Payout is 2.0x, so Profit = 1.0x Investment.
                     showResultOverlay(true, profit - t.amt);
-                } else {
                 } else {
                     // showToast('LOSS -$' + t.amt.toFixed(2), 'loss'); <-- Replaced with Overlay
                     showResultOverlay(false, t.amt);
@@ -2701,21 +2683,7 @@
                 }, 1500);
             }
 
-            // --- CLOCK ---
-            function updateClock() {
-                const now = new Date();
-                const timeString = now.toLocaleTimeString('en-US', {
-                    timeZone: 'Asia/Karachi',
-                    hour12: false,
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit'
-                });
-                const el = document.getElementById('headerClockTime');
-                if (el) el.innerText = timeString;
-            }
-            setInterval(updateClock, 1000);
-            updateClock(); // Initial call
+
         </script>
     </div> <!-- Close main-container -->
 </body>
